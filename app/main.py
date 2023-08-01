@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import flask
-from flask.testing import FlaskClient
-import pytest
+# https://fastapi.tiangolo.com/deployment/docker/#create-the-fastapi-code
 
-from app.main import app as flask_app
+from typing import Union
 
+from fastapi import FastAPI
 
-@pytest.fixture
-def app() -> None:
-    yield flask_app
+app = FastAPI()
 
 
-@pytest.fixture
-def client(app: flask.app.Flask) -> FlaskClient:
-    return app.test_client()
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: Union[str, None] = None):
+    return {"item_id": item_id, "q": q}

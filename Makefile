@@ -1,37 +1,58 @@
-APP ?= cloud-run-microservice
-REPO ?= chugai
-PROJECT ?= aiml-play
-REGION ?= us-central1
-IMAGE_VER ?= 0.1.0
-IMAGE ?= $(APP):$(IMAGE_VER)
-IMAGE_PATH ?= $(REGION)-docker.pkg.dev/$(PROJECT)/$(REPO)/$(IMAGE)
-PORT ?= 8080
-CB_YAML ?= cloudbuild.yaml
-SRC_DIR ?= .
+include ./scripts/00-init.sh
 
 FORCE:
 
+check: 
+	echo "SRC_DIR: ${SRC_DIR}"
+
 install:
-	source venv/bin/activate && pip install -r $(SRC_DIR)/requirements.txt invoke flake8 black
+	source venv/bin/activate && pip install -r ${SRC_DIR}/requirements.txt -r ${SRC_DIR}/requirements-test.txt
 
 repo:
-	gcloud artifacts repositories create $(REPO) --location $(REGION) --repository-format=docker
+	gcloud artifacts repositories create ${REPOSITORY} --location ${REGION} --repository-format=docker
 
-build: FORCE 
-	time gcloud builds submit --config=$(CB_YAML) \
-	--substitutions=_LOCATION="$(REGION)",_REPOSITORY="$(REPO)",_IMAGE="$(IMAGE)" $(SRC_DIR)
+define removeDockerImages =
+for f in `docker images | grep -v REPOSITORY | awk '{print $3}'`; do docker image rm -f $f; done
+endef
 
-deploy:
-	source scripts/00-init.sh && invoke deploy
+dockerClean:
+	${value removeDockerImages}
+
+clean: dockerClean
+	rm -rf app/__pycache__
+	gcloud artifacts docker images delete ${IMAGE_PATH} --quiet
 
 build:
-	source scripts/00-init.sh && invoke build
+	invoke build
+
+deploy:
+	invoke deploy
+
+make deployDelete:
+	gcloud run deploy ${APP} \
+	--image us-central1-docker.pkg.dev/aiml-play/chugai/${IMAGE} \
+	--region us-central1 \
+	--port 8080 \
+	--platform managed \
+	--allow-unauthenticated
 
 dev:
-	source scripts/00-init.sh && invoke dev
-
-test:
-	source scripts/00-init.sh && invoke test
+	source venv/bin/activate && invoke dev
 
 lint:
-	source scripts/00-init.sh && invoke lint
+	source venv/bin/activate && invoke lint
+
+test:
+	invoke test
+
+curl:
+	curl -s http://localhost:8080 | jq
+
+runImageLocal:
+	docker run -d --name ${APP} -p ${PORT}:${PORT} myimage:latest
+
+runImage:
+	docker run -d --name ${APP} -p ${PORT}:${PORT} ${IMAGE_PATH}
+
+run:
+	source venv/bin/activate  && uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --reload

@@ -54,7 +54,7 @@ Invoke will handle establishing local virtual environments, etc. Task definition
 
 1. Set Project Id:
     ```bash
-    export GOOGLE_CLOUD_PROJECT=<GCP_PROJECT_ID>
+    export PROJECT_ID=<GCP_PROJECT_ID>
     ```
 2. Start the server with hot reload:
     ```bash
@@ -65,7 +65,7 @@ Invoke will handle establishing local virtual environments, etc. Task definition
 
 1. Set Project Id:
     ```bash
-    export GOOGLE_CLOUD_PROJECT=<GCP_PROJECT_ID>
+    export PROJECT_ID=<GCP_PROJECT_ID>
     ```
 
 1. Enable the Artifact Registry API:
@@ -103,7 +103,7 @@ Invoke will handle establishing local virtual environments, etc. Task definition
 
 2. Set Project Id:
     ```bash
-    export GOOGLE_CLOUD_PROJECT=<GCP_PROJECT_ID>
+    export PROJECT_ID=<GCP_PROJECT_ID>
     ```
 3. Run unit tests
     ```bash

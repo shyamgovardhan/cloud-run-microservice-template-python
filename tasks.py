@@ -26,17 +26,21 @@ from typing import List
 from invoke import task
 
 venv = "source ./venv/bin/activate"
-GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT")
+APP = os.environ.get("APP")
+PROJECT_ID = os.environ.get("PROJECT_ID")
 REGION = os.environ.get("REGION", "us-central1")
 REPOSITORY = os.environ.get("REPOSITORY", "chugai")
-IMAGE = os.environ.get("IMAGE", "cloud-run-microservice:0.1.0")
+IMAGE = os.environ.get("IMAGE")
+CB_YAML = os.environ.get("CB_YAML", "cloudbuild.yaml")
+SRC_DIR = os.environ.get("SRC_DIR", ".")
+PORT = os.environ.get("PORT", "8080")
 
 
 @task
 def require_project(c):  # noqa: ANN001, ANN201
-    """(Check) Require GOOGLE_CLOUD_PROJECT be defined"""
-    if GOOGLE_CLOUD_PROJECT is None:
-        print("GOOGLE_CLOUD_PROJECT not defined. Required for task")
+    """(Check) Require PROJECT_ID be defined"""
+    if PROJECT_ID is None:
+        print("PROJECT_ID not defined. Required for task")
         sys.exit(1)
 
 
@@ -77,7 +81,7 @@ def start(c):  # noqa: ANN001, ANN201
 def dev(c):  # noqa: ANN001, ANN201
     """Start the web service in a development environment, with fast reload"""
     with c.prefix(venv):
-        c.run("FLASK_DEBUG=development python app.py")
+        c.run("uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload")
 
 
 @task(pre=[require_venv])
@@ -121,8 +125,8 @@ def fix(c):  # noqa: ANN001, ANN201
 def build(c):  # noqa: ANN001, ANN201
     """Build the service into a container image"""
     c.run(
-        f"gcloud builds submit --pack "
-        f"image={REGION}-docker.pkg.dev/{GOOGLE_CLOUD_PROJECT}/{REPOSITORY}/{IMAGE} "
+        f"gcloud builds submit --config={CB_YAML} "
+        f"--substitutions=_LOCATION={REGION},_REPOSITORY={REPOSITORY},_IMAGE={IMAGE} {SRC_DIR}"        
     )
 
 
@@ -130,9 +134,12 @@ def build(c):  # noqa: ANN001, ANN201
 def deploy(c):  # noqa: ANN001, ANN201
     """Deploy the container into Cloud Run (fully managed)"""
     c.run(
-        "gcloud run deploy microservice-template "
-        f"--image {REGION}-docker.pkg.dev/{GOOGLE_CLOUD_PROJECT}/{REPOSITORY}/{IMAGE} "
-        f"--platform managed --region {REGION}"
+	    f"gcloud run deploy ${APP} " \
+        f"--image {REGION}-docker.pkg.dev/{PROJECT_ID}/{REPOSITORY}/{IMAGE} "
+        f"--region us-central1 " \
+        f"--port {PORT} " \
+        f"--platform managed " \
+        f"--allow-unauthenticated "
     )
 
 
