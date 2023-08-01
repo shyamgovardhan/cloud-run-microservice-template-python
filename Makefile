@@ -12,7 +12,7 @@ SRC_DIR ?= .
 FORCE:
 
 install:
-	source venv/bin/activate && pip install -r $(SRC_DIR)/requirements.txt && pip install invoke
+	source venv/bin/activate && pip install -r $(SRC_DIR)/requirements.txt invoke flake8 black
 
 repo:
 	gcloud artifacts repositories create $(REPO) --location $(REGION) --repository-format=docker
@@ -32,3 +32,6 @@ dev:
 
 test:
 	source scripts/00-init.sh && invoke test
+
+lint:
+	source scripts/00-init.sh && invoke lint

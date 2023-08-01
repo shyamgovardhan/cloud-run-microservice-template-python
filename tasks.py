@@ -31,6 +31,7 @@ REGION = os.environ.get("REGION", "us-central1")
 REPOSITORY = os.environ.get("REPOSITORY", "chugai")
 IMAGE = os.environ.get("IMAGE", "cloud-run-microservice:0.1.0")
 
+
 @task
 def require_project(c):  # noqa: ANN001, ANN201
     """(Check) Require GOOGLE_CLOUD_PROJECT be defined"""
@@ -82,13 +83,13 @@ def dev(c):  # noqa: ANN001, ANN201
 @task(pre=[require_venv])
 def lint(c):  # noqa: ANN001, ANN201
     """Run linting checks"""
+    #"--import-order-style=google "
+    #f"--application-import-names {','.join(local_names)} "
     with c.prefix(venv):
-        local_names = _determine_local_import_names(".")
+        # local_names = _determine_local_import_names(".")
         c.run(
             "flake8 --exclude venv "
             "--max-line-length=88 "
-            "--import-order-style=google "
-            f"--application-import-names {','.join(local_names)} "
             "--ignore=E121,E123,E126,E203,E226,E24,E266,E501,E704,W503,W504,I202"
         )
 
