@@ -28,7 +28,8 @@ from invoke import task
 venv = "source ./venv/bin/activate"
 GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT")
 REGION = os.environ.get("REGION", "us-central1")
-
+REPOSITORY = os.environ.get("REPOSITORY", "chugai")
+IMAGE = os.environ.get("IMAGE", "cloud-run-microservice:0.1.0")
 
 @task
 def require_project(c):  # noqa: ANN001, ANN201
@@ -75,7 +76,7 @@ def start(c):  # noqa: ANN001, ANN201
 def dev(c):  # noqa: ANN001, ANN201
     """Start the web service in a development environment, with fast reload"""
     with c.prefix(venv):
-        c.run("FLASK_ENV=development python app.py")
+        c.run("FLASK_DEBUG=development python app.py")
 
 
 @task(pre=[require_venv])
@@ -120,7 +121,7 @@ def build(c):  # noqa: ANN001, ANN201
     """Build the service into a container image"""
     c.run(
         f"gcloud builds submit --pack "
-        f"image={REGION}-docker.pkg.dev/{GOOGLE_CLOUD_PROJECT}/samples/microservice-template:manual"
+        f"image={REGION}-docker.pkg.dev/{GOOGLE_CLOUD_PROJECT}/{REPOSITORY}/{IMAGE} "
     )
 
 
@@ -129,7 +130,7 @@ def deploy(c):  # noqa: ANN001, ANN201
     """Deploy the container into Cloud Run (fully managed)"""
     c.run(
         "gcloud run deploy microservice-template "
-        f"--image {REGION}-docker.pkg.dev/{GOOGLE_CLOUD_PROJECT}/samples/microservice-template:manual "
+        f"--image {REGION}-docker.pkg.dev/{GOOGLE_CLOUD_PROJECT}/{REPOSITORY}/{IMAGE} "
         f"--platform managed --region {REGION}"
     )
 
