@@ -28,14 +28,6 @@ build:
 deploy:
 	invoke deploy
 
-make deployDelete:
-	gcloud run deploy ${APP} \
-	--image us-central1-docker.pkg.dev/aiml-play/chugai/${IMAGE} \
-	--region us-central1 \
-	--port 8080 \
-	--platform managed \
-	--allow-unauthenticated
-
 dev:
 	source venv/bin/activate && invoke dev
 
