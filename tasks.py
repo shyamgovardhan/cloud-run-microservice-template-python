@@ -28,13 +28,36 @@ from invoke import task
 venv = "source ./venv/bin/activate"
 APP = os.environ.get("APP")
 PROJECT_ID = os.environ.get("PROJECT_ID")
+SERVICE_ACCOUNT = os.environ.get("SERVICE_ACCOUNT")
+IMAGE = os.environ.get("IMAGE")
 REGION = os.environ.get("REGION", "us-central1")
 REPOSITORY = os.environ.get("REPOSITORY", "chugai")
-IMAGE = os.environ.get("IMAGE")
 CB_YAML = os.environ.get("CB_YAML", "cloudbuild.yaml")
 SRC_DIR = os.environ.get("SRC_DIR", ".")
 PORT = os.environ.get("PORT", "8080")
 
+@task
+def require_environ(c):  # noqa: ANN001, ANN201
+    environ_dict = {
+        "APP": APP,
+        "PROJECT_ID": PROJECT_ID,
+        "SERVICE_ACCOUNT": SERVICE_ACCOUNT,
+        "IMAGE": IMAGE,
+        "REGION": REGION,
+        "REPOSITORY": REPOSITORY,
+        "CB_YAML": CB_YAML,
+        "SRC_DIR": SRC_DIR,
+        "PORT": PORT,
+    }
+    missing_envs = []
+    for key, val in environ_dict.items():
+        """(Check) Require environ be defined"""
+        if val is None:
+            missing_envs.append(key)
+    if len(missing_envs) > 0:
+        print("The following environment variables are not defined. They are required for task")
+        print(missing_envs)
+        sys.exit(1)
 
 @task
 def require_project(c):  # noqa: ANN001, ANN201
@@ -121,7 +144,7 @@ def fix(c):  # noqa: ANN001, ANN201
         c.run("isort --profile google *.py **/*.py")
 
 
-@task(pre=[require_project])
+@task(pre=[require_environ])
 def build(c):  # noqa: ANN001, ANN201
     """Build the service into a container image"""
     c.run(
@@ -130,7 +153,7 @@ def build(c):  # noqa: ANN001, ANN201
     )
 
 
-@task(pre=[require_project])
+@task(pre=[require_environ])
 def deploy(c):  # noqa: ANN001, ANN201
     """Deploy the container into Cloud Run (fully managed)"""
     c.run(
@@ -139,7 +162,7 @@ def deploy(c):  # noqa: ANN001, ANN201
         f"--region us-central1 " \
         f"--port {PORT} " \
         f"--platform managed " \
-        f"--allow-unauthenticated "
+        f"--service-account {SERVICE_ACCOUNT} "
     )
 
 
